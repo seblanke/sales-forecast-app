@@ -1,0 +1,6 @@
+account_id,quarter,booked_lag1,booked_lag2,consumed_lag1,account_age_quarters
+ACC_001,2024-Q4,48,45,42,8
+ACC_002,2024-Q4,33,0,31,8
+ACC_003,2024-Q4,27,25,24,8
+ACC_004,2024-Q4,40,38,35,8
+ACC_005,2024-Q4,29,28,26,8
