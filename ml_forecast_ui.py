@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -39,7 +40,7 @@ if uploaded_file is not None:
             model.fit(X_train, y_train)
             y_pred = model.predict(X_test)
 
-            rmse = mean_squared_error(y_test, y_pred, squared=False)
+            rmse = np.sqrt(mean_squared_error(y_test, y_pred))  # Fix hier
             st.success(f"RMSE des Modells: {rmse:.2f}")
 
             # Feature Importance
