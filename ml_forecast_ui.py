@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -26,35 +25,40 @@ if uploaded_file is not None:
         st.header("3. Modelltraining")
         test_size = st.slider("Testdaten-Anteil", 0.1, 0.5, 0.2)
 
-        X = df[feature_cols].dropna()
-        y = df.loc[X.index, target_col]
+        # Robust: Nur numerische Features zulassen
+        df_filtered = df[feature_cols].select_dtypes(include=[np.number])
+        if df_filtered.shape[1] == 0:
+            st.error("Keine numerischen Features gefunden. Bitte wähle passende Spalten aus.")
+        else:
+            X = df_filtered.dropna()
+            y = df.loc[X.index, target_col]
 
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
 
-        model = XGBRegressor(n_estimators=100, max_depth=4, learning_rate=0.1)
-        model.fit(X_train, y_train)
-        y_pred = model.predict(X_test)
+            model = XGBRegressor(n_estimators=100, max_depth=4, learning_rate=0.1)
+            model.fit(X_train, y_train)
+            y_pred = model.predict(X_test)
 
-        rmse = mean_squared_error(y_test, y_pred, squared=False)
-        st.success(f"RMSE des Modells: {rmse:.2f}")
+            rmse = mean_squared_error(y_test, y_pred, squared=False)
+            st.success(f"RMSE des Modells: {rmse:.2f}")
 
-        # Feature Importance
-        st.subheader("Feature-Wichtigkeit")
-        importance_df = pd.DataFrame({
-            'Feature': feature_cols,
-            'Wichtigkeit': model.feature_importances_
-        }).sort_values(by="Wichtigkeit", ascending=False)
-        st.write(importance_df)
+            # Feature Importance
+            st.subheader("Feature-Wichtigkeit")
+            importance_df = pd.DataFrame({
+                'Feature': X.columns,
+                'Wichtigkeit': model.feature_importances_
+            }).sort_values(by="Wichtigkeit", ascending=False)
+            st.write(importance_df)
 
-        # Step 4: Vorhersage
-        st.header("4. Forecast und Zielsetzung")
-        forecast_input = df[feature_cols].dropna()
-        df_result = df.loc[forecast_input.index].copy()
-        df_result["Forecast"] = model.predict(forecast_input)
-        stretch = st.slider("Stretch-Faktor in %", 0, 50, 10)
-        df_result["Zielwert"] = df_result["Forecast"] * (1 + stretch / 100)
+            # Step 4: Vorhersage
+            st.header("4. Forecast und Zielsetzung")
+            forecast_input = X
+            df_result = df.loc[forecast_input.index].copy()
+            df_result["Forecast"] = model.predict(forecast_input)
+            stretch = st.slider("Stretch-Faktor in %", 0, 50, 10)
+            df_result["Zielwert"] = df_result["Forecast"] * (1 + stretch / 100)
 
-        st.write(df_result[["Forecast", "Zielwert"] + feature_cols].head())
+            st.write(df_result[["Forecast", "Zielwert"] + [target_col]].head())
 
-        csv_export = df_result.to_csv(index=False).encode('utf-8')
-        st.download_button("📥 Ergebnisse als CSV herunterladen", csv_export, "forecast_output.csv", "text/csv")
+            csv_export = df_result.to_csv(index=False).encode('utf-8')
+            st.download_button("📥 Ergebnisse als CSV herunterladen", csv_export, "forecast_output.csv", "text/csv")
